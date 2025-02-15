@@ -26,10 +26,58 @@
         <p class="analysis-text">{{ result.reason }}</p>
       </div>
 
-      <div class="details-section">
-        <h4 class="section-title">详细分析</h4>
-        <div class="chart-wrapper" v-if="result.analysisData">
-          <spark-analysis-chart :data="result.analysisData" />
+      <div class="chart-section">
+        <h3>详细分析</h3>
+        <div class="analysis-grid">
+          <!-- 基础分析因素 -->
+          <div class="analysis-group">
+            <h4>基础分析</h4>
+            <div class="analysis-items">
+              <div class="analysis-item" v-for="(value, key) in result.factors" :key="key">
+                <div class="analysis-header">
+                  <span class="analysis-label">{{ key }}</span>
+                  <span class="analysis-value">{{ (value * 100).toFixed(2) }}%</span>
+                </div>
+                <el-progress 
+                  :percentage="value * 100" 
+                  :color="getProgressColor(value)"
+                  :stroke-width="8"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 深度分析数据 -->
+          <div class="analysis-group">
+            <h4>深度分析</h4>
+            <div class="analysis-items">
+              <div class="analysis-item" v-for="(value, key) in result.analysisData" :key="key">
+                <div class="analysis-header">
+                  <span class="analysis-label">{{ key }}</span>
+                  <span class="analysis-value">{{ (value * 100).toFixed(2) }}%</span>
+                </div>
+                <el-progress 
+                  :percentage="value * 100" 
+                  :color="getProgressColor(value)"
+                  :stroke-width="8"
+                />
+              </div>
+            </div>
+          </div>
+
+          <!-- 内容展示区域 -->
+          <div class="content-display" v-if="result.type === 'text'">
+            <h4>验证内容</h4>
+            <div class="content-text">{{ result.content }}</div>
+          </div>
+          <div class="content-display" v-else-if="result.type === 'image'">
+            <h4>图片内容</h4>
+            <img :src="result.imageUrl" class="content-image" alt="验证图片" />
+          </div>
+          <div class="content-display" v-else-if="result.type === 'video'">
+            <h4>视频内容</h4>
+            <video :src="result.videoUrl" class="content-video" controls></video>
+          </div>
         </div>
       </div>
 
@@ -46,7 +94,6 @@
 <script setup>
 import { defineProps } from 'vue'
 import { Timer } from '@element-plus/icons-vue'
-import SparkAnalysisChart from './SparkAnalysisChart.vue'
 
 const props = defineProps({
   result: {
@@ -54,6 +101,12 @@ const props = defineProps({
     required: true
   }
 })
+
+const getProgressColor = (value) => {
+  if (value >= 0.8) return '#67C23A'  // 绿色
+  if (value >= 0.6) return '#E6A23C'  // 黄色
+  return '#F56C6C'  // 红色
+}
 </script>
 
 <style scoped>
@@ -136,13 +189,97 @@ const props = defineProps({
   line-height: 1.6;
 }
 
-.details-section {
+.chart-section {
   margin-bottom: 24px;
 }
 
-.chart-wrapper {
-  height: 300px;
-  margin-top: 16px;
+.analysis-grid {
+  display: grid;
+  gap: 24px;
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  margin-top: 20px;
+}
+
+.analysis-group {
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.analysis-group h4 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.analysis-items {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.analysis-item {
+  background: white;
+  padding: 12px;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.analysis-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+
+.analysis-label {
+  color: #666;
+  font-size: 14px;
+}
+
+.analysis-value {
+  font-weight: 600;
+  color: var(--primary-color);
+}
+
+.content-display {
+  grid-column: 1 / -1;
+  background: #f8f9fa;
+  border-radius: 12px;
+  padding: 20px;
+}
+
+.content-display h4 {
+  margin: 0 0 16px;
+  font-size: 16px;
+  color: #333;
+  font-weight: 600;
+}
+
+.content-text {
+  background: white;
+  padding: 16px;
+  border-radius: 8px;
+  line-height: 1.6;
+  max-height: 200px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+}
+
+.content-image {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
+.content-video {
+  width: 100%;
+  max-width: 800px;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
 }
 
 .meta-section {
@@ -164,11 +301,17 @@ const props = defineProps({
 
 /* Element Plus 样式覆盖 */
 :deep(.el-progress-bar__outer) {
-  border-radius: 6px;
+  border-radius: 4px;
 }
 
 :deep(.el-progress-bar__inner) {
-  border-radius: 6px;
+  border-radius: 4px;
   transition: all 0.3s ease;
+}
+
+@media (max-width: 768px) {
+  .analysis-grid {
+    grid-template-columns: 1fr;
+  }
 }
 </style> 

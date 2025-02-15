@@ -6,7 +6,7 @@
       <div class="gradient-sphere"></div>
     </div>
 
-    <header class="app-header">
+    <header class="app-header" v-if="$route.name !== 'login'">
       <div class="header-left">
         <router-link to="/" class="logo">新闻真假检测系统</router-link>
         <nav class="nav-menu">
@@ -21,11 +21,29 @@
         </nav>
       </div>
       <div class="header-right">
-        <el-button type="primary" class="premium-btn">
+        <el-button type="primary" class="premium-btn" v-if="isAuthenticated">
           <el-icon><star-filled /></el-icon>
           获取无限AI智能
         </el-button>
-        <el-avatar class="user-avatar" :size="32">Y</el-avatar>
+        <template v-if="isAuthenticated">
+          <el-dropdown @command="handleCommand">
+            <el-avatar class="user-avatar" :size="32">
+              {{ userInfo.username ? userInfo.username.charAt(0).toUpperCase() : 'U' }}
+            </el-avatar>
+            <template #dropdown>
+              <el-dropdown-menu>
+                <el-dropdown-item command="profile">个人信息</el-dropdown-item>
+                <el-dropdown-item command="settings">设置</el-dropdown-item>
+                <el-dropdown-item divided command="logout">退出登录</el-dropdown-item>
+              </el-dropdown-menu>
+            </template>
+          </el-dropdown>
+        </template>
+        <template v-else>
+          <router-link to="/login">
+            <el-button type="primary">登录</el-button>
+          </router-link>
+        </template>
       </div>
     </header>
     
@@ -40,7 +58,37 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useStore } from 'vuex'
+import { useRouter } from 'vue-router'
 import { HomeFilled, Histogram, StarFilled } from '@element-plus/icons-vue'
+import { ElMessage } from 'element-plus'
+
+const store = useStore()
+const router = useRouter()
+
+const isAuthenticated = computed(() => store.getters['user/isAuthenticated'])
+const userInfo = computed(() => store.getters['user/userInfo'])
+
+const handleCommand = async (command) => {
+  switch (command) {
+    case 'logout':
+      try {
+        await store.dispatch('user/logout')
+        ElMessage.success('退出登录成功')
+        router.push('/login')
+      } catch (error) {
+        ElMessage.error('退出登录失败')
+      }
+      break
+    case 'profile':
+      // 处理个人信息
+      break
+    case 'settings':
+      // 处理设置
+      break
+  }
+}
 </script>
 
 <style>

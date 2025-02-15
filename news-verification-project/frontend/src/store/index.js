@@ -1,7 +1,12 @@
 import { createStore } from 'vuex'
 import axios from 'axios'
+import user from './modules/user'
 
-export default createStore({
+const store = createStore({
+  modules: {
+    user
+  },
+  
   state: {
     verificationResults: [],
     currentResult: null,
@@ -57,6 +62,7 @@ export default createStore({
             'Content-Type': 'multipart/form-data'
           }
         })
+        console.log(response.data,'response.data');
         
         const result = {
           ...response.data,
@@ -96,4 +102,6 @@ export default createStore({
       return state.verificationResults.slice(0, 10)
     }
   }
-}) 
+})
+
+export default store 

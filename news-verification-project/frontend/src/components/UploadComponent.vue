@@ -14,10 +14,10 @@
       <el-upload
         class="upload-area"
         drag
-        action="/api/verify/image"
-        :on-success="handleSuccess"
-        :on-error="handleError"
-        :auto-upload="true"
+        action="#"
+        :auto-upload="false"
+        :http-request="handleImageUpload"
+        :on-change="handleImageChange"
       >
         <el-icon class="upload-icon"><upload-filled /></el-icon>
         <div class="upload-text">
@@ -31,10 +31,10 @@
       <el-upload
         class="upload-area"
         drag
-        action="/api/verify/video"
-        :on-success="handleSuccess"
-        :on-error="handleError"
-        :auto-upload="true"
+        action="#"
+        :auto-upload="false"
+        :http-request="handleVideoUpload"
+        :on-change="handleVideoChange"
       >
         <el-icon class="upload-icon"><video-camera /></el-icon>
         <div class="upload-text">
@@ -73,38 +73,77 @@ const props = defineProps({
 
 const textContent = ref('')
 const loading = ref(false)
+const currentFile = ref(null)
 
 const canVerify = computed(() => {
   if (props.activeTab === 'text') {
     return textContent.value.trim().length > 0
+  } else if (props.activeTab === 'image' || props.activeTab === 'video') {
+    return currentFile.value !== null
   }
-  return true
+  return false
 })
 
-const handleSuccess = (response) => {
-  ElMessage.success('上传成功')
-  emit('verification-complete', response)
+const handleImageChange = (file) => {
+  if (!file) return
+  const isImage = file.raw.type.startsWith('image/')
+  if (!isImage) {
+    ElMessage.error('请上传图片文件')
+    return
+  }
+  currentFile.value = file.raw
 }
 
-const handleError = () => {
-  ElMessage.error('上传失败')
+const handleVideoChange = (file) => {
+  if (!file) return
+  const isVideo = file.raw.type.startsWith('video/')
+  if (!isVideo) {
+    ElMessage.error('请上传视频文件')
+    return
+  }
+  currentFile.value = file.raw
+}
+
+const handleImageUpload = async (options) => {
+  // 这个函数现在只在验证时被调用
+  const formData = new FormData()
+  formData.append('file', options.file)
+  return formData
+}
+
+const handleVideoUpload = async (options) => {
+  // 这个函数现在只在验证时被调用
+  const formData = new FormData()
+  formData.append('file', options.file)
+  return formData
 }
 
 const handleVerify = async () => {
-  if (props.activeTab === 'text' && !textContent.value) {
-    ElMessage.warning('请输入需要验证的文本')
+  if (!canVerify.value) {
+    ElMessage.warning(props.activeTab === 'text' ? '请输入需要验证的文本' : '请先上传文件')
     return
   }
 
   loading.value = true
   try {
-    const response = await axios.post(`/api/verify/${props.activeTab}`, {
-      content: textContent.value
-    })
+    let response
+    if (props.activeTab === 'text') {
+      response = await axios.post('/api/verify/text', {
+        content: textContent.value
+      })
+    } else {
+      const formData = new FormData()
+      formData.append('file', currentFile.value)
+      response = await axios.post(`/api/verify/${props.activeTab}`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        }
+      })
+    }
     emit('verification-complete', response.data)
     ElMessage.success('验证完成')
   } catch (error) {
-    ElMessage.error('验证失败')
+    ElMessage.error('验证失败：' + (error.response?.data?.error || error.message))
   } finally {
     loading.value = false
   }

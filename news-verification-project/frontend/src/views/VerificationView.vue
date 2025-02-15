@@ -48,7 +48,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, watch } from 'vue'
 import { Document, Picture, VideoCamera } from '@element-plus/icons-vue'
 import UploadComponent from '../components/UploadComponent.vue'
 import VerificationResult from '../components/VerificationResult.vue'
@@ -59,6 +59,11 @@ const verificationResult = ref(null)
 const handleVerificationComplete = (result) => {
   verificationResult.value = result
 }
+
+// 添加 watch 监听 activeTab 变化
+watch(activeTab, () => {
+  verificationResult.value = null
+})
 </script>
 
 <style scoped>
